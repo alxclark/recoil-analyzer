@@ -1,0 +1,19 @@
+{
+  "name": "graph-matcher",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "collect": "tsx ./scripts/collect.ts"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@quilted/typescript": "^0.4.1"
+  },
+  "dependencies": {
+    "@types/node": "^20.14.9",
+    "tsx": "^4.16.2",
+    "typescript": "^5.5.3"
+  }
+}
