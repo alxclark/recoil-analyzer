@@ -14,7 +14,7 @@ export function collectSelectorFamilyDependencies(sourceFile: ts.SourceFile) {
   function collect(node: ts.Node) {
     switch (true) {
       case isIdentifier(node): {
-        if (node.escapedText === "fdsfdsfdssfsdfs") {
+        if (node.escapedText === "get") {
           // We retrieved all calls to `get(/* */)`, but we need to validate that it comes from Recoil.
 
           if (!isCallExpression(node.parent)) return;
@@ -35,7 +35,7 @@ export function collectSelectorFamilyDependencies(sourceFile: ts.SourceFile) {
               isObjectLiteralExpression(expression) &&
               isCallExpression(expression.parent) &&
               isIdentifier(expression.parent.expression) &&
-              expression.parent.expression.escapedText === "selector"
+              expression.parent.expression.escapedText === "selectorFamily"
           );
 
           if (!ancestor || !isCallExpression(ancestor.parent)) return;
@@ -50,7 +50,7 @@ export function collectSelectorFamilyDependencies(sourceFile: ts.SourceFile) {
               id: selector,
               data: {
                 label: selector,
-                type: "selector",
+                type: "selectorFamily",
               },
               position: { x: 0, y: 0 },
             });
@@ -68,7 +68,7 @@ export function collectSelectorFamilyDependencies(sourceFile: ts.SourceFile) {
 
           const id = `${selector}-->${selectorDependency};`;
 
-          if (!edges.has(id)) {
+          if (!edges.has(id) && selector !== selectorDependency) {
             edges.set(id, {
               id,
               source: selector,
