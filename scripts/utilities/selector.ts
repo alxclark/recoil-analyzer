@@ -68,7 +68,8 @@ export function collectSelectorDependencies(sourceFile: ts.SourceFile) {
 
           const id = `${selector}-->${selectorDependency};`;
 
-          if (!edges.has(id)) {
+          // In some cases, the selector reads itself
+          if (!edges.has(id) && selector !== selectorDependency) {
             edges.set(id, {
               id,
               source: selector,

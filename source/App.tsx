@@ -180,6 +180,10 @@ export function App() {
           <button onClick={reset}>Reset</button>
           <button onClick={filterPhase1}>Remove leaf nodes</button>
         </Panel>
+
+        <Panel position='bottom-right'>
+          <span>{layoutedNodes.length - nodes.length} / {layoutedNodes.length} atoms refactored</span>
+        </Panel>
       </ReactFlow>
     </div>
   );

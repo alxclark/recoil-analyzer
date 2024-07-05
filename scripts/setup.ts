@@ -9,9 +9,9 @@ import {
 import ts from "typescript";
 import path from "path";
 import { Node, type Edge } from "reactflow";
-import { collectSelectorDependencies } from "./utilities/selector";
 import { annotationsTemplate } from "./utilities/annotations";
 import { collectSelectorFamilyDependencies } from "./utilities/selector-family";
+import { collectSelectorDependencies } from "./utilities/selector";
 
 export const nodes = new Map<string, Node>();
 export const edges = new Map<string, Edge>();
@@ -36,7 +36,7 @@ function analyzeRecursively(directoryPath: string) {
       );
 
       collectSelectorDependencies(sourceFile);
-      // collectSelectorFamilyDependencies(sourceFile);
+      collectSelectorFamilyDependencies(sourceFile);
     }
   });
 }
