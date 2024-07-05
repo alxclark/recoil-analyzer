@@ -1,4 +1,5 @@
 {
+  "include": ["source", "build/annotations.ts"],
   "compilerOptions": {
     "composite": true,
     "declaration": true,

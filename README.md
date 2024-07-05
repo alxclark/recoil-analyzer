@@ -8,7 +8,7 @@ This can prove to be useful for refactoring purposes if you need to identify clu
 
 ```
 pnpm install
-pnpm run collect
+pnpm run setup
 ```
 
 The script will log tuples on the screen in the following format:
@@ -19,4 +19,8 @@ The script will log tuples on the screen in the following format:
 
 ## Visualizing
 
-The simplest way to visualize at the moment is by running the script, copying the entier output in your terminal and dumping it in the Graph Data section of https://csacademy.com/app/graph_editor/.
+You can open a visualizer by running:
+
+```
+pnpm dev
+```

@@ -1,4 +1,11 @@
-import { readFileSync, readdirSync, statSync } from "fs";
+import {
+  readFileSync,
+  readdirSync,
+  statSync,
+  writeFileSync,
+  existsSync,
+  mkdirSync,
+} from "fs";
 import ts, {
   findAncestor,
   isCallExpression,
@@ -7,6 +14,10 @@ import ts, {
   isVariableDeclaration,
 } from "typescript";
 import path from "path";
+import { Node, type Edge } from "reactflow";
+
+const nodes = new Map<string, Node>();
+const edges = new Map<string, Edge>();
 
 export function collectSelectorDependencies(sourceFile: ts.SourceFile) {
   collect(sourceFile);
@@ -25,7 +36,8 @@ export function collectSelectorDependencies(sourceFile: ts.SourceFile) {
           )
             return;
 
-          const selectorDependency = node.parent.arguments[0].escapedText;
+          const selectorDependency =
+            node.parent.arguments[0].escapedText.toString();
 
           // Attempt to find an ancestor that is called `selector`.
           const ancestor = findAncestor(
@@ -41,9 +53,38 @@ export function collectSelectorDependencies(sourceFile: ts.SourceFile) {
           if (!isVariableDeclaration(ancestor.parent.parent)) return;
           if (!isIdentifier(ancestor.parent.parent.name)) return;
 
-          const selector = ancestor.parent.parent.name.escapedText;
+          const selector = ancestor.parent.parent.name.escapedText.toString();
 
-          console.log(selector, selectorDependency);
+          if (!nodes.has(selector)) {
+            // Can store additional metadata (ie if selector, atom or atomFamily)
+            nodes.set(selector, {
+              id: selector,
+              data: {
+                label: selector,
+              },
+              position: { x: 0, y: 0 },
+            });
+          }
+
+          if (!nodes.has(selectorDependency)) {
+            nodes.set(selectorDependency, {
+              id: selectorDependency,
+              data: {
+                label: selectorDependency,
+              },
+              position: { x: 0, y: 0 },
+            });
+          }
+
+          const id = `${selector}-->${selectorDependency};`;
+
+          if (!edges.has(id)) {
+            edges.set(id, {
+              id,
+              source: selector,
+              target: selectorDependency,
+            });
+          }
         }
         break;
       }
@@ -79,3 +120,29 @@ const directories = process.argv.slice(2);
 directories.forEach((directory) => {
   readFilesRecursively(directory);
 });
+
+const nodesArray = [...nodes.entries()].map(([, value]) => value);
+const edgesArray = [...edges.entries()].map(([, value]) => value);
+
+if (!existsSync("./build")) {
+  mkdirSync("./build");
+}
+
+if (!existsSync("./build/annotations.ts")) {
+  writeFileSync(
+    "./build/annotations.ts",
+    `
+import { StateAnnotation } from "../source/types";
+
+export const stateAnnotations = new Map<string, StateAnnotation>([]);
+`
+  );
+}
+
+writeFileSync(
+  "./build/graph.json",
+  JSON.stringify({
+    nodes: nodesArray,
+    edges: edgesArray,
+  })
+);

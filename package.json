@@ -3,17 +3,27 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+  "type": "module",
   "scripts": {
-    "collect": "tsx ./scripts/collect.ts"
+    "setup": "tsx ./scripts/setup.ts",
+    "dev": "vite"
   },
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@quilted/typescript": "^0.4.1"
+    "@quilted/typescript": "^0.4.1",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.1"
   },
   "dependencies": {
+    "@dagrejs/dagre": "^1.1.3",
     "@types/node": "^20.14.9",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "reactflow": "^11.11.4",
     "tsx": "^4.16.2",
-    "typescript": "^5.5.3"
+    "typescript": "^5.5.3",
+    "vite": "^5.3.3"
   }
 }
