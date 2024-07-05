@@ -16,13 +16,18 @@ import graph from '../build/graph.json';
 
 import 'reactflow/dist/style.css';
 
-const dagreGraph = new dagre.graphlib.Graph();
-dagreGraph.setDefaultEdgeLabel(() => ({}));
-
 const defaultNodeWidth = 172;
 const defaultNodeHeight = 36;
 
+let dagreGraph = new dagre.graphlib.Graph();
+
 const getLayoutedElements = (nodes: Node[], edges: Edge[], direction = 'TB') => {
+  // We recreate a new graph to recompute completely the node positions.
+  // Otherwise, the nodes will remain at the same location.
+  dagreGraph = new dagre.graphlib.Graph();
+
+  dagreGraph.setDefaultEdgeLabel(() => ({}));
+
   const isHorizontal = direction === 'LR';
   dagreGraph.setGraph({ rankdir: direction });
 
@@ -48,6 +53,43 @@ const getLayoutedElements = (nodes: Node[], edges: Edge[], direction = 'TB') => 
       y: nodeWithPosition.y - (node.height ?? defaultNodeHeight) / 2,
     };
 
+    const inEdges = dagreGraph.inEdges(node.id) ?? [];
+    const isNotADependency = inEdges.length === 0;
+
+    const outEdges = dagreGraph.outEdges(node.id) ?? [];
+    const hasNoDependency = outEdges.length === 0;
+
+    const predecessors = (dagreGraph.predecessors(node.id) ?? []) as any as string[]
+    const hasParentWithDependencies = predecessors.some((pre) => {
+      const inEdges = dagreGraph.inEdges(pre) ?? []
+      return inEdges.length > 0;
+    })
+  
+    // if(hasNoDependency) {
+    //   node.style = {
+    //     ...node.style,
+    //     background: "#d9edf8"
+    //   }
+    // }
+
+    if (!hasParentWithDependencies) {
+      node.style = {
+        ...node.style,
+        background: "#fdffB6"
+      }
+    }
+
+    if(isNotADependency) {
+      node.style = {
+        ...node.style,
+        background: "#ffd6a5"
+      }
+    }
+    
+    node.data.hasNoParentWithDependencies = !hasParentWithDependencies;
+    node.data.isNotADependency = isNotADependency;
+    node.data.hasNoDependency = hasNoDependency;
+
     return node;
   });
 
@@ -56,7 +98,7 @@ const getLayoutedElements = (nodes: Node[], edges: Edge[], direction = 'TB') => 
 
 const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(
   graph.nodes,
-  graph.edges
+  graph.edges as Edge[] // string-enum conversion breaks the types.
 );
 
 export function App() {
@@ -84,6 +126,40 @@ export function App() {
     [nodes, edges]
   );
 
+  const reset = useCallback(
+    () => {
+      const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(
+        graph.nodes,
+        graph.edges as any,
+        'TB'
+      );
+
+      setNodes([...layoutedNodes]);
+      setEdges([...layoutedEdges]);
+    },
+    [nodes, edges]
+  );
+
+  const filterPhase1 = useCallback(
+    () => {
+      const filteredNodes = nodes.filter(node => !node.data.isNotADependency)
+      const filteredEdges = edges.filter(edge => 
+        filteredNodes.some(node => edge.source === node.id) &&
+        filteredNodes.some(node => edge.target === node.id)
+      );
+
+      const { nodes: newNodes, edges: newEdges } = getLayoutedElements(
+        filteredNodes,
+        filteredEdges,
+        'TB'
+      );
+
+      setNodes([...newNodes]);
+      setEdges([...newEdges]);
+    },
+    [nodes, edges]
+  );
+
   return (
     <div style={{height: '100vh'}}>
       <ReactFlow
@@ -99,6 +175,14 @@ export function App() {
         <Panel position="top-right">
           <button onClick={() => onLayout('TB')}>vertical layout</button>
           <button onClick={() => onLayout('LR')}>horizontal layout</button>
+        </Panel>
+        <Panel position='top-left'>
+          <button onClick={reset}>Reset</button>
+          <button onClick={filterPhase1}>Remove leaf nodes</button>
+        </Panel>
+
+        <Panel position='bottom-right'>
+          <span>{layoutedNodes.length - nodes.length} / {layoutedNodes.length} atoms refactored</span>
         </Panel>
       </ReactFlow>
     </div>
