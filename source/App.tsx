@@ -19,8 +19,13 @@ import 'reactflow/dist/style.css';
 const defaultNodeWidth = 172;
 const defaultNodeHeight = 36;
 
+let dagreGraph = new dagre.graphlib.Graph();
+
 const getLayoutedElements = (nodes: Node[], edges: Edge[], direction = 'TB') => {
-  const dagreGraph = new dagre.graphlib.Graph();
+  // We recreate a new graph to recompute completely the node positions.
+  // Otherwise, the nodes will remain at the same location.
+  dagreGraph = new dagre.graphlib.Graph();
+
   dagreGraph.setDefaultEdgeLabel(() => ({}));
 
   const isHorizontal = direction === 'LR';
@@ -60,12 +65,12 @@ const getLayoutedElements = (nodes: Node[], edges: Edge[], direction = 'TB') => 
       return inEdges.length > 0;
     })
   
-    if(hasNoDependency) {
-      node.style = {
-        ...node.style,
-        background: "#d9edf8"
-      }
-    }
+    // if(hasNoDependency) {
+    //   node.style = {
+    //     ...node.style,
+    //     background: "#d9edf8"
+    //   }
+    // }
 
     if (!hasParentWithDependencies) {
       node.style = {
@@ -137,30 +142,22 @@ export function App() {
 
   const filterPhase1 = useCallback(
     () => {
+      const filteredNodes = nodes.filter(node => !node.data.isNotADependency)
+      const filteredEdges = edges.filter(edge => 
+        filteredNodes.some(node => edge.source === node.id) &&
+        filteredNodes.some(node => edge.target === node.id)
+      );
+
       const { nodes: newNodes, edges: newEdges } = getLayoutedElements(
-        layoutedNodes.filter(node => !node.data.isNotADependency),
-        edges,
+        filteredNodes,
+        filteredEdges,
         'TB'
       );
 
       setNodes([...newNodes]);
       setEdges([...newEdges]);
     },
-    []
-  );
-
-  const filterPhase2 = useCallback(
-    () => {
-      const { nodes: newNodes, edges: newEdges } = getLayoutedElements(
-        layoutedNodes.filter(node => !node.data.hasNoParentWithDependencies),
-        edges,
-        'TB'
-      );
-
-      setNodes([...newNodes]);
-      setEdges([...newEdges]);
-    },
-    []
+    [nodes, edges]
   );
 
   return (
@@ -181,8 +178,7 @@ export function App() {
         </Panel>
         <Panel position='top-left'>
           <button onClick={reset}>Reset</button>
-          <button onClick={filterPhase1}>Phase 1</button>
-          <button onClick={filterPhase2}>Phase 2</button>
+          <button onClick={filterPhase1}>Remove leaf nodes</button>
         </Panel>
       </ReactFlow>
     </div>
