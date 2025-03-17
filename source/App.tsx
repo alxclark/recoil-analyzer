@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import ReactFlow, {
   addEdge,
   ConnectionLineType,
@@ -37,7 +37,7 @@ const getLayoutedElements = (nodes: Node[], edges: Edge[], direction = 'TB') => 
 
   edges.forEach((edge) => {
     dagreGraph.setEdge(edge.source, edge.target);
-  });
+  });   
 
   dagre.layout(dagreGraph);
 
@@ -104,6 +104,7 @@ const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(
 export function App() {
   const [nodes, setNodes, onNodesChange] = useNodesState(layoutedNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(layoutedEdges);
+  const [removedNodes, setRemovedNodes] = useState<string[][]>([])
 
   const onConnect = useCallback(
     (params: Edge | Connection) =>
@@ -154,37 +155,47 @@ export function App() {
         'TB'
       );
 
+      const removedNodes = nodes.filter(node => node.data.isNotADependency).map(node => node.id)
+
+      setRemovedNodes((prev) => [...prev, removedNodes])
+
       setNodes([...newNodes]);
       setEdges([...newEdges]);
     },
-    [nodes, edges]
+    [nodes, edges, setRemovedNodes]
   );
 
   return (
-    <div style={{height: '100vh'}}>
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        onConnect={onConnect}
-        connectionLineType={ConnectionLineType.SmoothStep}
-        fitView
-        onNodeClick={(node) => navigator.clipboard.writeText((node.target as any).dataset.id)}
-      >
-        <Panel position="top-right">
-          <button onClick={() => onLayout('TB')}>vertical layout</button>
-          <button onClick={() => onLayout('LR')}>horizontal layout</button>
-        </Panel>
-        <Panel position='top-left'>
-          <button onClick={reset}>Reset</button>
-          <button onClick={filterPhase1}>Remove leaf nodes</button>
-        </Panel>
+    <>
+      <div style={{height: '100vh'}}>
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+          onConnect={onConnect}
+          connectionLineType={ConnectionLineType.SmoothStep}
+          fitView
+          onNodeClick={(node) => navigator.clipboard.writeText((node.target as any).dataset.id)}
+        >
+          <Panel position="top-right">
+            <button onClick={() => onLayout('TB')}>vertical layout</button>
+            <button onClick={() => onLayout('LR')}>horizontal layout</button>
+          </Panel>
+          <Panel position='top-left'>
+            <button onClick={reset}>Reset</button>
+            <button onClick={filterPhase1}>Remove leaf nodes</button>
+          </Panel>
 
-        <Panel position='bottom-right'>
-          <span>{layoutedNodes.length - nodes.length} / {layoutedNodes.length} atoms refactored</span>
-        </Panel>
-      </ReactFlow>
-    </div>
+          <Panel position='bottom-right'>
+            <span>{layoutedNodes.length - nodes.length} / {layoutedNodes.length} atoms refactored</span>
+          </Panel>
+        </ReactFlow>
+      </div>
+      <details>
+        <summary>Removed nodes</summary>
+        {removedNodes.map((batch, index) => <details><summary>Iteration {index}</summary>{batch.map(node => <p>{node}</p>)}</details>)}
+      </details>
+    </>
   );
 };
